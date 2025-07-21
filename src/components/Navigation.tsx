@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navigation() {
+  const { user, isAuthenticated, logout } = useAuth();
+
   return (
     <nav className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,18 +42,46 @@ export default function Navigation() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <Link
-              href="/login"
-              className="text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Get Started
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-700">
+                    Welcome, {user?.firstName}
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="text-gray-700 hover:text-gray-900 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+                <Link
+                  href={
+                    user?.role === "entrepreneur"
+                      ? "/dashboard/entrepreneur"
+                      : "/dashboard/investor"
+                  }
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

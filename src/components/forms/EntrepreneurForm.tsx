@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 interface EntrepreneurFormData {
   // Personal Information
@@ -41,6 +43,9 @@ interface EntrepreneurFormData {
 }
 
 export default function EntrepreneurForm() {
+  const { register } = useAuth();
+  const router = useRouter();
+
   const [formData, setFormData] = useState<EntrepreneurFormData>({
     firstName: "",
     lastName: "",
@@ -70,6 +75,8 @@ export default function EntrepreneurForm() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Partial<EntrepreneurFormData>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string>("");
 
   const handleInputChange = (
     field: keyof EntrepreneurFormData,
@@ -148,9 +155,24 @@ export default function EntrepreneurForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateStep(currentStep)) {
-      // Here you would typically send the data to your API
-      console.log("Entrepreneur registration data:", formData);
-      alert("Registration submitted successfully!");
+      setIsLoading(true);
+      setSubmitError("");
+
+      try {
+        const registrationData = {
+          ...formData,
+          role: "entrepreneur" as const,
+        };
+
+        await register(registrationData);
+        router.push("/dashboard/entrepreneur");
+      } catch (error: any) {
+        setSubmitError(
+          error.message || "Registration failed. Please try again."
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -665,6 +687,13 @@ export default function EntrepreneurForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Error Message */}
+      {submitError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600 text-sm">{submitError}</p>
+        </div>
+      )}
+
       {/* Progress Bar */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
@@ -709,9 +738,10 @@ export default function EntrepreneurForm() {
         ) : (
           <button
             type="submit"
-            className="ml-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            disabled={isLoading}
+            className="ml-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit Registration
+            {isLoading ? "Submitting..." : "Submit Registration"}
           </button>
         )}
       </div>

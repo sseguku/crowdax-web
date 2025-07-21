@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 interface InvestorFormData {
   // Personal Information
@@ -44,6 +46,9 @@ interface InvestorFormData {
 }
 
 export default function InvestorForm() {
+  const { register } = useAuth();
+  const router = useRouter();
+
   const [formData, setFormData] = useState<InvestorFormData>({
     firstName: "",
     lastName: "",
@@ -74,6 +79,8 @@ export default function InvestorForm() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Partial<InvestorFormData>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string>("");
 
   const handleInputChange = (
     field: keyof InvestorFormData,
@@ -177,9 +184,24 @@ export default function InvestorForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateStep(currentStep)) {
-      // Here you would typically send the data to your API
-      console.log("Investor registration data:", formData);
-      alert("Registration submitted successfully!");
+      setIsLoading(true);
+      setSubmitError("");
+
+      try {
+        const registrationData = {
+          ...formData,
+          role: "investor" as const,
+        };
+
+        await register(registrationData);
+        router.push("/dashboard/investor");
+      } catch (error: any) {
+        setSubmitError(
+          error.message || "Registration failed. Please try again."
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -802,6 +824,13 @@ export default function InvestorForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Error Message */}
+      {submitError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600 text-sm">{submitError}</p>
+        </div>
+      )}
+
       {/* Progress Bar */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
@@ -846,9 +875,10 @@ export default function InvestorForm() {
         ) : (
           <button
             type="submit"
-            className="ml-auto px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            disabled={isLoading}
+            className="ml-auto px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit Registration
+            {isLoading ? "Submitting..." : "Submit Registration"}
           </button>
         )}
       </div>

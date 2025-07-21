@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const { login } = useAuth();
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -11,6 +16,7 @@ export default function LoginPage() {
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -32,9 +38,24 @@ export default function LoginPage() {
       return;
     }
 
-    // Here you would typically authenticate with your API
-    console.log("Login attempt:", formData);
-    alert("Login functionality would be implemented here");
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      await login(formData.email, formData.password, formData.role);
+      // Redirect based on role
+      if (formData.role === "entrepreneur") {
+        router.push("/dashboard/entrepreneur");
+      } else {
+        router.push("/dashboard/investor");
+      }
+    } catch (error: any) {
+      setErrors({
+        general: error.message || "Login failed. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -48,6 +69,11 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6">
+          {errors.general && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{errors.general}</p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Role Selection */}
             <div>
@@ -165,9 +191,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
